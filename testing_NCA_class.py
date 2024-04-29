@@ -17,6 +17,7 @@ NCA_model = NCA(ceilings=["ce-fdh","cr-fdh","ols"])
 print("Ceilings:")
 print(NCA_model.ceilings)
 print("")
+print(help(NCA))
 
 # Define Condition(s)/Determinants (x) and Outcome (y) in the dataset (data)
 # and fit the model with the columns X and y on the dataset (data)
