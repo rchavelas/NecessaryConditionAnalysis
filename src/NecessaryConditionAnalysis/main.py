@@ -16,6 +16,20 @@ import matplotlib.pyplot as plt
 
 # Definition of main NCA class
 class NCA:
+  """
+  A class to perform Necessary Condition Analysis on a given dataset
+
+  ...
+
+  Attributes
+  ----------
+
+
+  Methods
+  -------
+  
+
+  """
   # Initialize only requires the ceilings to be used in NCA analysis
   def __init__(self, ceilings=['ce-fdh', 'cr-fdh', 'ols']):
     self.ceilings = ceilings
