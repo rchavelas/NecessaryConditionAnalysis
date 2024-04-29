@@ -1,0 +1,10 @@
+LICENCE
+README.md
+pyproject.toml
+src/NecessaryConditionAnalysis/__init__.py
+src/NecessaryConditionAnalysis/main.py
+src/NecessaryConditionAnalysis.egg-info/PKG-INFO
+src/NecessaryConditionAnalysis.egg-info/SOURCES.txt
+src/NecessaryConditionAnalysis.egg-info/dependency_links.txt
+src/NecessaryConditionAnalysis.egg-info/requires.txt
+src/NecessaryConditionAnalysis.egg-info/top_level.txt
