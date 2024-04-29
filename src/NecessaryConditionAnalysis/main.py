@@ -532,7 +532,7 @@ class NCA:
     ceiling : str
       The type of ceiling line to use for the bottleneck table
     bottleneck_type : str, optional
-      The type of bottleneck table return
+      The type of bottleneck table to return
 
     Returns
     -------
