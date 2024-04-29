@@ -23,7 +23,8 @@ class NCA:
 
   Attributes
   ----------
-
+  ceilings : list
+    The selected ceiling lines to fit the data to the NCA
 
   Methods
   -------
@@ -32,6 +33,13 @@ class NCA:
   """
   # Initialize only requires the ceilings to be used in NCA analysis
   def __init__(self, ceilings=['ce-fdh', 'cr-fdh', 'ols']):
+    """
+    Parameters
+    ----------
+    ceilings : list
+      A list of ceiling lines from which to calculate NCA parameters 
+      (default is: ['ce-fdh', 'cr-fdh', 'ols'])
+    """
     self.ceilings = ceilings
     self.__fitted = False
     self.__n_dec = 1
@@ -347,6 +355,13 @@ class NCA:
   ## effects_ property
   @property
   def effects_(self):
+    """
+    Returns
+    -------
+    pd.DataFrame
+      A pandas DataFrame with the information of the effects for all 
+      variables and all required ceiling lines
+    """
     if not self.__fitted:
       raise Exception("NCA has not been fitted, make sure to .fit() de model")
     return pd.DataFrame(self._effects_)
@@ -382,14 +397,21 @@ class NCA:
     return pd.DataFrame(self._outcome_inefficiency_point_)
 
   # Main methods of the NCA class
-  ## fit() method, fits the data to the specified NCA ceilings
   def fit(self, X, y, data):
     '''
-    X: Conditions / Cause / Independent variable(s)
-    Y: Outcome / Effect / Dependent variable
-    data: a dataframe like object
+    Fits the data to the specified NCA ceilings
+
+    Parameters
+    ----------
+    X : list
+      The list of columns which describe conditions or independent variable(s)
+    y : str 
+      The column name of the outcome or dependent variable
+    data : pandas DataFrame
+      A pandas DataFrame object that holds the data to fit the NCA model
     '''
-    # Create an attribute for the y and X variable names
+
+    # Create a hidden attribute for the y and X variable names
     self.__y = y
     self.__X = X
     ## Create empty dict to hold effect sizes for all X for selected ceilings
@@ -499,8 +521,25 @@ class NCA:
     # Return the instance so the user can retreive the state of the instance (after fit)
     return self
 
-  # Compute bottlenek given a specific ceiling technique and a type of bottleneck
-  def bottleneck(self, ceiling, bottleneck_type):
+  def bottleneck(self, ceiling, bottleneck_type = "percentage"):
+    """
+    Returns the bottleneck table for a specific ceiling technique and 
+    type of bottleneck. You first need to fit() the model before using 
+    this method.
+
+    Parameters
+    ----------
+    ceiling : str
+      The type of ceiling line to use for the bottleneck table
+    bottleneck_type : str, optional
+      The type of bottleneck table return
+
+    Returns
+    -------
+    pd.DataFrame
+      a pandas DataFrame with the information of the bottleneck table
+
+    """
     if self.__fitted and ceiling=="cr-fdh" and "cr-fdh" in self.ceilings:
       return NCA.__bottleneck_table_abline_ceiling(self.__X,
                                              self.__y,
@@ -513,11 +552,19 @@ class NCA:
     else:
       print("Bottlenecks can't be shown. First fit the model to your dataset")
 
-  # Method to plot NCA scatterplot for a specific determinant and all required ceiling lines
   def plot(self, x):
-    '''
-    x name of the determinant in the provided dataframe which is going to be plotted
-    '''
+    """
+    Plots the NCA scatterplot for a specific determinant and all ceiling
+    lines defined in the fit() method. You first need to fit() the 
+    model before using this method.
+
+    Parameters
+    ----------
+    x : str 
+      Column name of the determinant in the provided dataframe which is
+      to be plotted
+    """
+
     ## Define plot style and params
     plt.rcParams.update({
         'figure.figsize': (10, 8),  # Set figsize in inches
