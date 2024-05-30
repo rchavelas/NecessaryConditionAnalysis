@@ -5,7 +5,7 @@ import matplotlib
 from src.NecessaryConditionAnalysis.main import NCA 
 
 # Load dataset
-data = pd.read_csv('src/NecessaryConditionAnalysis/datasets/NCA-MOOC-2005.csv', index_col=0)
+data = pd.read_csv('src/NecessaryConditionAnalysis/datasets/NCA_example_Vaccination_Basic_education_Life_expectancy_MOOC_2005.csv', index_col=0)
 X_columns = ["Vaccination","Basic education"]
 y_column = "Life expectancy"
 print(data.head())
