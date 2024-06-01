@@ -162,3 +162,5 @@ cython_debug/
 
 # Others
 todo.md
+.pyc
+/src/NecessaryConditionAnalysis/__pycache__
