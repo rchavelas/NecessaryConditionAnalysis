@@ -42,7 +42,7 @@ class NCA:
     """
     self.ceilings = ceilings
     self.__fitted = False
-    self.__n_dec = 1
+    self.__n_dec = 2
 
   # Helper functions for the fit() method
   ## Validate correct shape of data (TODO)
@@ -137,7 +137,7 @@ class NCA:
         upper_left_edges = np.append(upper_left_edges,[envelope_list[idx]],axis=0)
     return upper_left_edges
 
-  # Compute CE-FDH effect size
+  # Compute CE-FDH effect size and the size of the ceiling zone
   @staticmethod
   def __CE_FDH_effect_size(scope_lims,upper_left_edges):
     # Get scope values for x and y
@@ -161,7 +161,7 @@ class NCA:
       area_blw_CL += partial_area_blw_CL
     ## Compute Effect Size of NC
     d_CE_FDH = ((Scope-area_blw_CL) / Scope).round(3)
-    return d_CE_FDH
+    return d_CE_FDH, Scope-area_blw_CL
 
   # Compute FR-FDH OLS model parameters (a + b*x) returns (slope, intercept)
   @staticmethod
@@ -208,14 +208,14 @@ class NCA:
       ## Based on the shoelace formula (https://stackoverflow.com/a/30408825/15548668)
       return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
 
-  # Calculate CR-FDH effect size
+  # Calculate CR-FDH effect size and the size of the ceiling zone
   @staticmethod
   def __CR_FDH_effect_size(Scope, CR_FDH_Polygon):
     ## Calculate area below CR line
     area_blw_CR =  NCA.__PolyArea(CR_FDH_Polygon[:,0],CR_FDH_Polygon[:,1])
     ## Calculate effect size
     d_CR_FDH = ((Scope-area_blw_CR)/Scope).round(3)
-    return d_CR_FDH
+    return d_CR_FDH, Scope-area_blw_CR
 
   # Calculate accuracy from abline
   # Helper CR-FDH function
@@ -365,6 +365,19 @@ class NCA:
     if not self.__fitted:
       raise Exception("NCA has not been fitted, make sure to .fit() de model")
     return pd.DataFrame(self._effects_)
+  ## ceiling_size_ property
+  @property
+  def ceiling_size_(self):
+    """
+    Returns
+    -------
+    pd.DataFrame
+      A pandas DataFrame with the information of the ceiling_size for all 
+      variables and all required ceiling lines
+    """
+    if not self.__fitted:
+      raise Exception("NCA has not been fitted, make sure to .fit() de model")
+    return pd.DataFrame(self._ceiling_size_)
   ## accuracy_ property
   @property
   def accuracy_(self):
@@ -414,8 +427,10 @@ class NCA:
     # Create a hidden attribute for the y and X variable names
     self.__y = y
     self.__X = X
-    ## Create empty dict to hold effect sizes for all X for selected ceilings
-    self._effects_ = {}   
+    # Create empty dict to hold effect sizes for all X for selected ceilings
+    self._effects_ = {}
+    # Create empty dict to hold size of ceiling zone for all X for selected ceilings
+    self._ceiling_size_ = {}
     # Create empty dict to hold accuracy for all X for selected ceilings
     self._accuracy_ = {}
     # Create emtpy dict to hold condition inefficiency for all X for selected ceilings
@@ -449,7 +464,11 @@ class NCA:
       # Calculate CE-FDH effect sizes
       self.__CE_FDH_effect_sizes_dict = {}
       for x_item in X:
-        self.__CE_FDH_effect_sizes_dict[x_item] = NCA.__CE_FDH_effect_size(self.__scope_limits[x_item],self.__CE_FDH_upper_left_edges_dict[x_item])
+        self.__CE_FDH_effect_sizes_dict[x_item] = NCA.__CE_FDH_effect_size(self.__scope_limits[x_item],self.__CE_FDH_upper_left_edges_dict[x_item])[0]
+      # Calculate CE-FDH size of ceiling zone
+      self.__CE_FDH_ceiling_size_dict = {}
+      for x_item in X:
+        self.__CE_FDH_ceiling_size_dict[x_item] = NCA.__CE_FDH_effect_size(self.__scope_limits[x_item],self.__CE_FDH_upper_left_edges_dict[x_item])[1]
       # Calculate CE-FDH accuracy (by definition is always 1)
       self.__CE_FDH_accuracy_dict = {}
       for x_item in X:
@@ -458,6 +477,8 @@ class NCA:
       if "ce-fdh" in self.ceilings:
         ## Append CE-FDH effect sizes on effect sizes main dict
         self._effects_["ce-fdh"] = self.__CE_FDH_effect_sizes_dict
+        ## Append CE-FDH size of ceiling zone on size of ceiling zone main dict
+        self._ceiling_size_["ce-fdh"] = self.__CE_FDH_ceiling_size_dict
         ## Append CR-FDH accuarcy of accuracy main dict
         self._accuracy_["ce-fdh"] = self.__CE_FDH_accuracy_dict
 
@@ -477,9 +498,16 @@ class NCA:
       self.__CR_FDH_effect_sizes_dict = {}
       for x_item in X:
         self.__CR_FDH_effect_sizes_dict[x_item] = NCA.__CR_FDH_effect_size(self.__scope_limits[x_item]["Scope"],
-                                                        self.__CR_FDH_polygon_array_dict[x_item])
+                                                        self.__CR_FDH_polygon_array_dict[x_item])[0]
       ## Append CR-FDH effect sizes on effect sizes main dict
       self._effects_["cr-fdh"] = self.__CR_FDH_effect_sizes_dict
+      # Calculate CR-FDH size of ceiling zone
+      self.__CR_FDH_ceiling_size_dict = {}
+      for x_item in X:
+        self.__CR_FDH_ceiling_size_dict[x_item] = NCA.__CR_FDH_effect_size(self.__scope_limits[x_item]["Scope"],
+                                                        self.__CR_FDH_polygon_array_dict[x_item])[1]
+      ## Append CR-FDH size of ceiling zone on size of ceiling zone main dict
+      self._ceiling_size_["cr-fdh"] = self.__CR_FDH_ceiling_size_dict
       # Calculate CR-FDH accuracy
       self.__CR_FDH_accuracy_dict = {}
       for x_item in X:
