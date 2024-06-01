@@ -52,3 +52,6 @@ print(round(NCA_model.effects_["cr-fdh"].iloc[0],2) == 0.31)
 
 # Show NCA scatterplot for given ceilings and specified determinant (X)
 #NCA_model.plot(X_columns[0])
+
+# Show NCA Scope for the specified conditions
+#print(NCA_model.scope_)

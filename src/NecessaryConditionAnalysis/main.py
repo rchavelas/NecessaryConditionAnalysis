@@ -352,6 +352,19 @@ class NCA:
     return np.polyfit(data_array[:,0], data_array[:,1], deg=1)
 
   # Define properties for non-public attributes  
+  ## scope_ property
+  @property
+  def scope_(self):
+    """
+    Returns
+    -------
+    pd.DataFrame
+      A pandas DataFrame with the information of the scope for all 
+      conditions
+    """
+    if not self.__fitted:
+      raise Exception("NCA has not been fitted, make sure to .fit() de model")
+    return pd.DataFrame(self._scope_, columns=["","Scope"]).set_index("").rename_axis(None, axis=0)
   ## effects_ property
   @property
   def effects_(self):
@@ -447,6 +460,8 @@ class NCA:
 
     # Calculate initial parameters
     self.__scope_limits = NCA.__define_scope_lims(data, X, y)
+    # Calculate Scope for all conditions in the dataset
+    self._scope_ = [[x,v['Scope']] for (x,v) in self.__scope_limits.items()]
 
     # Calculate sorted arrays
     self.__sorted_arrays = NCA.__create_sorted_arrays(data, X, y)
