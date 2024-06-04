@@ -10,7 +10,8 @@ X_columns = ["Individualism","Risk taking"]
 y_column = "Innovation performance"
 
 # Initialize NCA instance (instantiate NCA class an assign it to variable NCA_model)
-NCA_model = NCA(ceilings=["ce-fdh","cr-fdh","ols"])
+NCA_model = NCA(ceilings=["ce-fdh","cr-fdh","ols","cols"])
+
 # Define Condition(s)/Determinants (x) and Outcome (y) in the dataset (data)
 # and fit the model with the columns X and y on the dataset (data)
 NCA_model.fit(X=X_columns, y=y_column, data=data)
@@ -50,8 +51,16 @@ print("Tests")
 print(round(NCA_model.effects_["ce-fdh"].iloc[0],2) == 0.42)
 print(round(NCA_model.effects_["cr-fdh"].iloc[0],2) == 0.31)
 
+# Show NCA Scope for the specified conditions
+#print(NCA_model.scope_)
+
+# Print cols parameters
+print("")
+print(NCA_model._NCA__OLS_params_dict)
+print(NCA_model._NCA__COLS_params_dict)
+print(NCA_model._NCA__CR_FDH_polygon_array_dict)
+
+
 # Show NCA scatterplot for given ceilings and specified determinant (X)
 #NCA_model.plot(X_columns[0])
 
-# Show NCA Scope for the specified conditions
-#print(NCA_model.scope_)

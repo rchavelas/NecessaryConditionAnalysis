@@ -168,9 +168,9 @@ class NCA:
   def __CR_FDH_OLS_params(CE_FDH_upper_left_edges):
     return np.polyfit(CE_FDH_upper_left_edges[:,0], CE_FDH_upper_left_edges[:,1], deg=1)
 
-  # Calculate CR-FDH polygon within ceiling line and scope area
+  # Calculate auxiliary CR polygon within ceiling line and scope area
   @staticmethod
-  def __CR_FDH_polygon_array(scope_lims, b_CR_FDH, a_CR_FDH):
+  def __CR_polygon_array(scope_lims, b_CR, a_CR):
     # Get scope values for x and y
     Xmin = scope_lims["Xmin"]
     Xmax = scope_lims["Xmax"]
@@ -178,10 +178,10 @@ class NCA:
     Ymax = scope_lims["Ymax"]
     Scope = scope_lims["Scope"]
     # Create an array with the initial point of the scope
-    CR_FDH_Polygon = np.array([[Xmax,Ymin]])
+    CR_Polygon = np.array([[Xmax,Ymin]])
     ## Placeholders for slope and intercept in OLS regression line
-    m = b_CR_FDH
-    b = a_CR_FDH
+    m = b_CR
+    b = a_CR
     ## TODO: Validate if regression line is within scope bounds
     ## Calculate points Y1 and Y2 on Xmin and Xmax for OLS Model (CR-FDH)
     y1 = m*Xmin + b
@@ -189,36 +189,36 @@ class NCA:
     ## Create polygon based on geometric features (intercept of OLS line and scope area)
     ### (Create polygon counter-clockwise) Validate location of y2
     if(y2 > Ymax):
-      CR_FDH_Polygon = np.append(CR_FDH_Polygon, [[Xmax, Ymax]], axis=0)
-      CR_FDH_Polygon = np.append(CR_FDH_Polygon, [[(Ymax-b)/m, Ymax]], axis=0)
+      CR_Polygon = np.append(CR_Polygon, [[Xmax, Ymax]], axis=0)
+      CR_Polygon = np.append(CR_Polygon, [[(Ymax-b)/m, Ymax]], axis=0)
     else:
-      CR_FDH_Polygon = np.append(CR_FDH_Polygon, [[Xmax, y2]], axis=0)
+      CR_Polygon = np.append(CR_Polygon, [[Xmax, y2]], axis=0)
     ### Validate location of y1
     if(y1 > Ymin):
-      CR_FDH_Polygon = np.append(CR_FDH_Polygon, [[Xmin, y1]], axis=0)
-      CR_FDH_Polygon = np.append(CR_FDH_Polygon, [[Xmin, Ymin]], axis=0)
+      CR_Polygon = np.append(CR_Polygon, [[Xmin, y1]], axis=0)
+      CR_Polygon = np.append(CR_Polygon, [[Xmin, Ymin]], axis=0)
     else:
-      CR_FDH_Polygon = np.append(CR_FDH_Polygon, [[(Ymin-b)/m, Ymin]], axis=0)
+      CR_Polygon = np.append(CR_Polygon, [[(Ymin-b)/m, Ymin]], axis=0)
 
-    return CR_FDH_Polygon
+    return CR_Polygon
 
-  # Define CR-FDH helper function to calculate area in a polygon
+  # Define auxiliary CR function to calculate area in a polygon
   @staticmethod
   def __PolyArea(x,y):
       ## Based on the shoelace formula (https://stackoverflow.com/a/30408825/15548668)
       return 0.5*np.abs(np.dot(x,np.roll(y,1))-np.dot(y,np.roll(x,1)))
 
-  # Calculate CR-FDH effect size and the size of the ceiling zone
+  # Calculate auxiliary CR effect size and the size of the ceiling zone
   @staticmethod
-  def __CR_FDH_effect_size(Scope, CR_FDH_Polygon):
+  def __CR_effect_size(Scope, CR_polygon_array):
     ## Calculate area below CR line
-    area_blw_CR =  NCA.__PolyArea(CR_FDH_Polygon[:,0],CR_FDH_Polygon[:,1])
+    area_blw_CR =  NCA.__PolyArea(CR_polygon_array[:,0],CR_polygon_array[:,1])
     ## Calculate effect size
-    d_CR_FDH = ((Scope-area_blw_CR)/Scope).round(3)
-    return d_CR_FDH, Scope-area_blw_CR
+    d_CR = ((Scope-area_blw_CR)/Scope).round(3)
+    return d_CR, Scope-area_blw_CR
 
   # Calculate accuracy from abline
-  # Helper CR-FDH function
+  # Helper CR function
   @staticmethod
   def __accuracy_from_abline(data_array, slope_abline, intercept_abline):
     ## Create an empty array to store the values above the ceiling line
@@ -233,7 +233,7 @@ class NCA:
     return(accuracy_val)
 
   # Calculate condition inefficiency from abline
-  # Helper CR-FDH function
+  # Helper CR function
   @staticmethod
   def __condition_inefficiency_from_abline(scope_lims, slope_abline, intercept_abline):
     # Get scope values for x and y
@@ -259,7 +259,7 @@ class NCA:
     return i_subx, cond_ineff_point
 
   # Calculate outcome inefficiency from abline
-  # Helper CR-FDH function
+  # Helper CR function
   @staticmethod
   def __outcome_inefficiency_from_abline(scope_lims, slope_abline, intercept_abline):
     # Get scope values for x and y
@@ -300,7 +300,7 @@ class NCA:
       return(np.round(100*(act-min_val)/(max_val-min_val),n_dec))
 
   @staticmethod
-  def __bottleneck_x_calculation(actual_y, intercept, slope, xminval,n_dec):
+  def __bottleneck_x_calculation(actual_y, intercept, slope, xminval, n_dec):
     # Calculates current X value from Y value
     actual_x = np.round((actual_y-intercept)/slope,n_dec)
     if actual_x < xminval:
@@ -516,20 +516,20 @@ class NCA:
       # Calculate CR-FDH polygon array
       self.__CR_FDH_polygon_array_dict = {}
       for x_item in X:
-        self.__CR_FDH_polygon_array_dict[x_item] = NCA.__CR_FDH_polygon_array(self.__scope_limits[x_item],
+        self.__CR_FDH_polygon_array_dict[x_item] = NCA.__CR_polygon_array(self.__scope_limits[x_item],
                                                                 self.__CR_FDH_OLS_params_dict[x_item][0],
                                                                 self.__CR_FDH_OLS_params_dict[x_item][1])
       # Calculate CR-FDH effect sizes
       self.__CR_FDH_effect_sizes_dict = {}
       for x_item in X:
-        self.__CR_FDH_effect_sizes_dict[x_item] = NCA.__CR_FDH_effect_size(self.__scope_limits[x_item]["Scope"],
+        self.__CR_FDH_effect_sizes_dict[x_item] = NCA.__CR_effect_size(self.__scope_limits[x_item]["Scope"],
                                                         self.__CR_FDH_polygon_array_dict[x_item])[0]
       ## Append CR-FDH effect sizes on effect sizes main dict
       self._effects_["cr-fdh"] = self.__CR_FDH_effect_sizes_dict
       # Calculate CR-FDH size of ceiling zone
       self.__CR_FDH_ceiling_size_dict = {}
       for x_item in X:
-        self.__CR_FDH_ceiling_size_dict[x_item] = NCA.__CR_FDH_effect_size(self.__scope_limits[x_item]["Scope"],
+        self.__CR_FDH_ceiling_size_dict[x_item] = NCA.__CR_effect_size(self.__scope_limits[x_item]["Scope"],
                                                         self.__CR_FDH_polygon_array_dict[x_item])[1]
       ## Append CR-FDH size of ceiling zone on size of ceiling zone main dict
       self._ceiling_size_["cr-fdh"] = self.__CR_FDH_ceiling_size_dict
@@ -624,79 +624,81 @@ class NCA:
       Column name of the determinant in the provided dataframe which is
       to be plotted
     """
-
-    ## Define plot style and params
-    plt.rcParams.update({
-        'figure.figsize': (10, 8),  # Set figsize in inches
-        'font.family': 'serif',
-        'font.size': 10,
-        'axes.titlesize': 10,
-        'axes.grid': False,
-        'lines.linewidth': 1
-    })
-    # Setup plot limits
-    Xmin = self.__scope_limits[x]["Xmin"]
-    Xmax = self.__scope_limits[x]["Xmax"]
-    Ymin = self.__scope_limits[x]["Ymin"]
-    Ymax = self.__scope_limits[x]["Ymax"]
-    xseq = np.linspace(Xmin, Xmax, num=100)
-    ## Setup figure and axis
-    fig, ax = plt.subplots()
-    ## Draw limits of the scope
-    ax.axvline(x=Xmin, alpha=0.5, color="gray", ls="--")
-    ax.axvline(x=Xmax, alpha=0.5, color="gray", ls="--")
-    ax.axhline(y=Ymin, alpha=0.5, color="gray", ls="--")
-    ax.axhline(y=Ymax, alpha=0.5, color="gray", ls="--")
-    # Set plot labels
-    ax.set_xlabel(x)
-    ax.set_ylabel(self.__y)
-    ax.set_title(f"NCA Plot: {x} - {self.__y}")
-    ## Plot scatterplot
-    ax.plot(self.__sorted_arrays[x][:,0],
-            self.__sorted_arrays[x][:,1],
-            marker="o", ls='', color='#0000ff', alpha=0.5)
-    # Plot OLS Regression line
-    if "ols" in self.ceilings:
-      ax.plot(xseq,  self.__OLS_params_dict[x][1] + self.__OLS_params_dict[x][0] * xseq,
-              marker="", ls='-', color='#00ff00', label='OLS')
-    # Plot COLS Regression line
-    if "cols" in self.ceilings:
-      ax.plot(xseq,  self.__COLS_params_dict[x][1] + self.__COLS_params_dict[x][0] * xseq, 
-              marker="", ls='dotted', color='#006401', label='COLS')
-    # Plot CE-FDH ceiling envelope line
-    if "ce-fdh" in self.ceilings:
-      ax.plot(self.__CE_FDH_envelope_list_dict[x][:,0], self.__CE_FDH_envelope_list_dict[x][:,1],
-              "r-.",label ='CE-FDH')
-      '''
-      # Plot CE-FDH upper left edges (hidden as they are only meant to validate upper edges)
-      ax.plot(self.__CE_FDH_upper_left_edges_dict[x][:,0],
-              self.__CE_FDH_upper_left_edges_dict[x][:,1],
-              'cv', label="Upper left edges")
-      '''
-    # Plot CR-FDH ceiling regression line
-    if "cr-fdh" in self.ceilings:
-      ax.plot(xseq, self.__CR_FDH_OLS_params_dict[x][1] + self.__CR_FDH_OLS_params_dict[x][0] * xseq,
-              marker="", ls="-",color="#ffa500", label='CR-FDH')
-      '''
-      # Plot CR-FDH Polygon bounds (hidden as they are only meant to validate polygon)
-      ax.plot(self.__CR_FDH_polygon_array_dict[x][:,0], self.__CR_FDH_polygon_array_dict[x][:,1],
-              marker="+", ls="",color="blue", label="CR-FDH Polygon bounds")
-      # Plot CR-FDH Neccesity inefficiency boundaries (hidden as they are only meant to validate points)
-      ax.plot(self.__CR_FDH_condition_innefficiency_point_dict[x][0],
-              self.__CR_FDH_condition_innefficiency_point_dict[x][1],
-              marker = "+", ls="", color="orange", label="X_Cmax_CR_FDH")
-      ax.plot(self.__CR_FDH_outcome_innefficiency_point_dict[x][0],
-              self.__CR_FDH_outcome_innefficiency_point_dict[x][1],
-              marker = "+", ls="", color="gray", label="Y_Cmin_CR_FDH")
-      '''
-    ## Set limits on x and y axis
-    margin_size = 0.03
-    ax.set_ylim(bottom=Ymin-(Ymax-Ymin)*margin_size, top=Ymax+(Ymax-Ymin)*margin_size)
-    ax.set_xlim(left=Xmin-(Xmax-Xmin)*margin_size, right=Xmax+(Xmax-Xmin)*margin_size)
-    # Print legend
-    ax.legend(loc='upper left')
-    # Hide the right and top spines
-    ax.spines.right.set_visible(False)
-    ax.spines.top.set_visible(False)
-    # Show plot
-    plt.show()
+    if self.__fitted:
+      ## Define plot style and params
+      plt.rcParams.update({
+          'figure.figsize': (10, 8),  # Set figsize in inches
+          'font.family': 'serif',
+          'font.size': 10,
+          'axes.titlesize': 10,
+          'axes.grid': False,
+          'lines.linewidth': 1
+      })
+      # Setup plot limits
+      Xmin = self.__scope_limits[x]["Xmin"]
+      Xmax = self.__scope_limits[x]["Xmax"]
+      Ymin = self.__scope_limits[x]["Ymin"]
+      Ymax = self.__scope_limits[x]["Ymax"]
+      xseq = np.linspace(Xmin, Xmax, num=100)
+      ## Setup figure and axis
+      fig, ax = plt.subplots()
+      ## Draw limits of the scope
+      ax.axvline(x=Xmin, alpha=0.5, color="gray", ls="--")
+      ax.axvline(x=Xmax, alpha=0.5, color="gray", ls="--")
+      ax.axhline(y=Ymin, alpha=0.5, color="gray", ls="--")
+      ax.axhline(y=Ymax, alpha=0.5, color="gray", ls="--")
+      # Set plot labels
+      ax.set_xlabel(x)
+      ax.set_ylabel(self.__y)
+      ax.set_title(f"NCA Plot: {x} - {self.__y}")
+      ## Plot scatterplot
+      ax.plot(self.__sorted_arrays[x][:,0],
+              self.__sorted_arrays[x][:,1],
+              marker="o", ls='', color='#0000ff', alpha=0.5)
+      # Plot OLS Regression line
+      if "ols" in self.ceilings:
+        ax.plot(xseq,  self.__OLS_params_dict[x][1] + self.__OLS_params_dict[x][0] * xseq,
+                marker="", ls='-', color='#00ff00', label='OLS')
+      # Plot COLS Regression line
+      if "cols" in self.ceilings:
+        ax.plot(xseq,  self.__COLS_params_dict[x][1] + self.__COLS_params_dict[x][0] * xseq, 
+                marker="", ls='dotted', color='#006401', label='COLS')
+      # Plot CE-FDH ceiling envelope line
+      if "ce-fdh" in self.ceilings:
+        ax.plot(self.__CE_FDH_envelope_list_dict[x][:,0], self.__CE_FDH_envelope_list_dict[x][:,1],
+                "r-.",label ='CE-FDH')
+        '''
+        # Plot CE-FDH upper left edges (hidden as they are only meant to validate upper edges)
+        ax.plot(self.__CE_FDH_upper_left_edges_dict[x][:,0],
+                self.__CE_FDH_upper_left_edges_dict[x][:,1],
+                'cv', label="Upper left edges")
+        '''
+      # Plot CR-FDH ceiling regression line
+      if "cr-fdh" in self.ceilings:
+        ax.plot(xseq, self.__CR_FDH_OLS_params_dict[x][1] + self.__CR_FDH_OLS_params_dict[x][0] * xseq,
+                marker="", ls="-",color="#ffa500", label='CR-FDH')
+        '''
+        # Plot CR-FDH Polygon bounds (hidden as they are only meant to validate polygon)
+        ax.plot(self.__CR_FDH_polygon_array_dict[x][:,0], self.__CR_FDH_polygon_array_dict[x][:,1],
+                marker="+", ls="",color="blue", label="CR-FDH Polygon bounds")
+        # Plot CR-FDH Neccesity inefficiency boundaries (hidden as they are only meant to validate points)
+        ax.plot(self.__CR_FDH_condition_innefficiency_point_dict[x][0],
+                self.__CR_FDH_condition_innefficiency_point_dict[x][1],
+                marker = "+", ls="", color="orange", label="X_Cmax_CR_FDH")
+        ax.plot(self.__CR_FDH_outcome_innefficiency_point_dict[x][0],
+                self.__CR_FDH_outcome_innefficiency_point_dict[x][1],
+                marker = "+", ls="", color="gray", label="Y_Cmin_CR_FDH")
+        '''
+      ## Set limits on x and y axis
+      margin_size = 0.03
+      ax.set_ylim(bottom=Ymin-(Ymax-Ymin)*margin_size, top=Ymax+(Ymax-Ymin)*margin_size)
+      ax.set_xlim(left=Xmin-(Xmax-Xmin)*margin_size, right=Xmax+(Xmax-Xmin)*margin_size)
+      # Print legend
+      ax.legend(loc='upper left')
+      # Hide the right and top spines
+      ax.spines.right.set_visible(False)
+      ax.spines.top.set_visible(False)
+      # Show plot
+      plt.show()
+    else:
+      print("Plots can't be shown. First fit the model to your dataset")
