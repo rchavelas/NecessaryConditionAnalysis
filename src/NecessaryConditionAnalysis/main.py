@@ -350,6 +350,15 @@ class NCA:
   @staticmethod
   def __OLS_params(data_array):
     return np.polyfit(data_array[:,0], data_array[:,1], deg=1)
+  
+  # Calculate COLS model from OLS parameters OLS = (a + b * x) returns (slope, corrected intercept)
+  @staticmethod
+  def __COLS_params(data_array, a_OLS, b_OLS):
+    # Compute correction coefficient from residuals of OLS model
+    correction = (data_array[:,1]-(a_OLS+data_array[:,0]*b_OLS)).max()
+    # Compute COLS Model from all obs (a + C + b * x)
+    b_OLS_C, a_OLS_C = b_OLS, a_OLS + correction
+    return b_OLS_C, a_OLS_C
 
   # Define properties for non-public attributes  
   ## scope_ property
@@ -460,6 +469,7 @@ class NCA:
 
     # Calculate initial parameters
     self.__scope_limits = NCA.__define_scope_lims(data, X, y)
+
     # Calculate Scope for all conditions in the dataset
     self._scope_ = [[x,v['Scope']] for (x,v) in self.__scope_limits.items()]
 
@@ -553,11 +563,18 @@ class NCA:
       self._outcome_inefficiency_point_["cr-fdh"] = self.__CR_FDH_outcome_innefficiency_point_dict
 
     # Calculate OLS model parameters for all observations (a + b*x)
-    if "ols" in self.ceilings:
+    if "ols" in self.ceilings or "cols" in self.ceilings:
       # Calculate OLS parameters
       self.__OLS_params_dict = {}
       for x_item in X:
         self.__OLS_params_dict[x_item] = NCA.__OLS_params(self.__sorted_arrays[x_item])
+      
+    # Calculate COLS model parameters
+    if "cols" in self.ceilings:
+      # Calculate COLS parameters
+      self.__COLS_params_dict = {}
+      for x_item in X:
+        self.__COLS_params_dict[x_item] = NCA.__COLS_params(self.__sorted_arrays[x_item],self.__OLS_params_dict[x_item][1],self.__OLS_params_dict[x_item][0]) 
 
     # If no errors were found, change the fitted flag to true
     self.__fitted = True
@@ -642,6 +659,10 @@ class NCA:
     if "ols" in self.ceilings:
       ax.plot(xseq,  self.__OLS_params_dict[x][1] + self.__OLS_params_dict[x][0] * xseq,
               marker="", ls='-', color='#00ff00', label='OLS')
+    # Plot COLS Regression line
+    if "cols" in self.ceilings:
+      ax.plot(xseq,  self.__COLS_params_dict[x][1] + self.__COLS_params_dict[x][0] * xseq, 
+              marker="", ls='dotted', color='#006401', label='COLS')
     # Plot CE-FDH ceiling envelope line
     if "ce-fdh" in self.ceilings:
       ax.plot(self.__CE_FDH_envelope_list_dict[x][:,0], self.__CE_FDH_envelope_list_dict[x][:,1],
