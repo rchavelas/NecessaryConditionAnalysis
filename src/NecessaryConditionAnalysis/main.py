@@ -309,7 +309,7 @@ class NCA:
 
   # Bottleneck table for all variables in X for a given ceiling abline
   @staticmethod
-  def __bottleneck_table_abline_ceiling(X, y, bottleneck_type, OLS_ceiling_line_dict, scope_lims_dict, n_dec):
+  def __bottleneck_table_abline_ceiling(X, y, bottleneck_type, CR_ceiling_line_dict, scope_lims_dict, n_dec):
     # This is a tabluar representation of the ceiling lines of one or more NC
     # It shows the required necessary level of the conditioins (as % or actual values)
     # for a given level of the outcome (as % or actual values)
@@ -325,8 +325,8 @@ class NCA:
     ## Calculate bottleneck values for determinants
     for x_item in X:
       bb_table[x_item+"_vals"] = bb_table[y+"_vals"].apply(NCA.__bottleneck_x_calculation,
-                                                      args=(OLS_ceiling_line_dict[x_item][1],
-                                                            OLS_ceiling_line_dict[x_item][0],
+                                                      args=(CR_ceiling_line_dict[x_item][1],
+                                                            CR_ceiling_line_dict[x_item][0],
                                                             scope_lims_dict[x_item]["Xmin"],
                                                             n_dec))
     ## Calculate percentiles from actual values (determinants)
@@ -656,14 +656,14 @@ class NCA:
       return NCA.__bottleneck_table_abline_ceiling(self.__X,
                                              self.__y,
                                              bottleneck_type = bottleneck_type,
-                                             OLS_ceiling_line_dict=self.__CR_FDH_OLS_params_dict,
+                                             CR_ceiling_line_dict=self.__CR_FDH_OLS_params_dict,
                                              scope_lims_dict = self.__scope_limits,
                                              n_dec = self.__n_dec)
     elif self.__fitted and ceiling=="cols" and "cols" in self.ceilings:
       return NCA.__bottleneck_table_abline_ceiling(self.__X,
                                              self.__y,
                                              bottleneck_type = bottleneck_type,
-                                             OLS_ceiling_line_dict=self.__COLS_params_dict,
+                                             CR_ceiling_line_dict=self.__COLS_params_dict,
                                              scope_lims_dict = self.__scope_limits,
                                              n_dec = self.__n_dec)
     elif self.__fitted:
