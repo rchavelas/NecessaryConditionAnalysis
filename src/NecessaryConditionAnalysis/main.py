@@ -285,11 +285,11 @@ class NCA:
     i_suby = (Y_Cmin - Ymin) / (Ymax-Ymin)
     return i_suby, outc_ineff_point
 
-  # Define helper function to retreive actual values from percentiles
-  # (assuming a linear relationship) and percentiles from actual values
   # Helper functions in bottleneck tables
+  # Define helper functions to retreive actual values from percentiles
+  # (assuming a linear relationship) and percentiles from actual values
   @staticmethod
-  def __actual_value(perc,max_val, min_val):
+  def __actual_value(perc, max_val, min_val):
     return((max_val-min_val)*(perc/100)+min_val)
 
   @staticmethod
@@ -309,10 +309,10 @@ class NCA:
 
   # Bottleneck table for all variables in X for a given ceiling abline
   @staticmethod
-  def __bottleneck_table_abline_ceiling(X,y,bottleneck_type, OLS_ceiling_line_dict, scope_lims_dict,n_dec):
+  def __bottleneck_table_abline_ceiling(X, y, bottleneck_type, OLS_ceiling_line_dict, scope_lims_dict, n_dec):
     # This is a tabluar representation of the ceiling lines of one or more NC
-    # It shows the required necessary level of the conditioins (as %)
-    # for a given level of the outcome (as %)
+    # It shows the required necessary level of the conditioins (as % or actual values)
+    # for a given level of the outcome (as % or actual values)
     ## Define a range of percentiles to create bottleneck table
     outcome_perc = range(0,101,10)
     bb_table = pd.DataFrame({y+"_perc": outcome_perc})
@@ -353,7 +353,7 @@ class NCA:
   
   # Calculate COLS model from OLS parameters OLS = (a + b * x) returns (slope, corrected intercept)
   @staticmethod
-  def __COLS_params(data_array, a_OLS, b_OLS):
+  def __COLS_params(data_array, b_OLS, a_OLS):
     # Compute correction coefficient from residuals of OLS model
     correction = (data_array[:,1]-(a_OLS+data_array[:,0]*b_OLS)).max()
     # Compute COLS Model from all obs (a + C + b * x)
@@ -434,7 +434,7 @@ class NCA:
   # Main methods of the NCA class
   def fit(self, X, y, data):
     '''
-    Fits the data to the specified NCA ceilings
+    Fits the data to the specified NCA ceilings.
 
     Parameters
     ----------
@@ -569,12 +569,62 @@ class NCA:
       for x_item in X:
         self.__OLS_params_dict[x_item] = NCA.__OLS_params(self.__sorted_arrays[x_item])
       
-    # Calculate COLS model parameters
+    # Calculate COLS if COLS is in required ceilings
     if "cols" in self.ceilings:
       # Calculate COLS parameters
       self.__COLS_params_dict = {}
       for x_item in X:
-        self.__COLS_params_dict[x_item] = NCA.__COLS_params(self.__sorted_arrays[x_item],self.__OLS_params_dict[x_item][1],self.__OLS_params_dict[x_item][0]) 
+        self.__COLS_params_dict[x_item] = NCA.__COLS_params(self.__sorted_arrays[x_item],
+                                                            self.__OLS_params_dict[x_item][0],
+                                                            self.__OLS_params_dict[x_item][1]) 
+      # Calculate COLS polygon array
+      self.__COLS_polygon_array_dict = {}
+      for x_item in X:
+        self.__COLS_polygon_array_dict[x_item] = NCA.__CR_polygon_array(self.__scope_limits[x_item],
+                                                                self.__COLS_params_dict[x_item][0],
+                                                                self.__COLS_params_dict[x_item][1])
+      # Calculate COLS effect sizes
+      self.__COLS_effect_sizes_dict = {}
+      for x_item in X:
+        self.__COLS_effect_sizes_dict[x_item] = NCA.__CR_effect_size(self.__scope_limits[x_item]["Scope"],
+                                                        self.__COLS_polygon_array_dict[x_item])[0]
+      ## Append COLS effect sizes on effect sizes main dict
+      self._effects_["cols"] = self.__COLS_effect_sizes_dict
+      # Calculate COLS size of ceiling zone
+      self.__COLS_ceiling_size_dict = {}
+      for x_item in X:
+        self.__COLS_ceiling_size_dict[x_item] = NCA.__CR_effect_size(self.__scope_limits[x_item]["Scope"],
+                                                        self.__COLS_polygon_array_dict[x_item])[1]
+      ## Append COLS size of ceiling zone on size of ceiling zone main dict
+      self._ceiling_size_["cols"] = self.__COLS_ceiling_size_dict
+      # Calculate COLS accuracy
+      self.__COLS_accuracy_dict = {}
+      for x_item in X:
+        self.__COLS_accuracy_dict[x_item] = NCA.__accuracy_from_abline(self.__sorted_arrays[x_item],
+                                                                           self.__COLS_params_dict[x_item][0],
+                                                                           self.__COLS_params_dict[x_item][1])
+      ## Append COLS accuarcy of accuracy main dict
+      self._accuracy_["cols"] = self.__COLS_accuracy_dict
+      # Calculate COLS condition inefficiency
+      self.__COLS_condition_inefficiency_dict = {}
+      self.__COLS_condition_innefficiency_point_dict = {}
+      for x_item in X:
+        self.__COLS_condition_inefficiency_dict[x_item], self.__COLS_condition_innefficiency_point_dict[x_item] = NCA.__condition_inefficiency_from_abline(scope_lims=self.__scope_limits[x_item],
+                                                                                                     slope_abline=self.__COLS_params_dict[x_item][0],
+                                                                                                     intercept_abline=self.__COLS_params_dict[x_item][1])
+      ## Append COLS condition inefficiency  to main dict
+      self._condition_inefficiency_["cols"] = self.__COLS_condition_inefficiency_dict
+      self._condition_inefficiency_point_["cols"] = self.__COLS_condition_innefficiency_point_dict
+      # Calculate COLS outcome inefficiency
+      self.__COLS_outcome_inefficiency_dict = {}
+      self.__COLS_outcome_innefficiency_point_dict = {}
+      for x_item in X:
+        self.__COLS_outcome_inefficiency_dict[x_item], self.__COLS_outcome_innefficiency_point_dict[x_item] = NCA.__outcome_inefficiency_from_abline(scope_lims=self.__scope_limits[x_item],
+                                                                                                 slope_abline=self.__COLS_params_dict[x_item][0],
+                                                                                                 intercept_abline=self.__COLS_params_dict[x_item][1])
+      ## Append COLS outcome inefficiency to main dict
+      self._outcome_inefficiency_["cols"] = self.__COLS_outcome_inefficiency_dict
+      self._outcome_inefficiency_point_["cols"] = self.__COLS_outcome_innefficiency_point_dict
 
     # If no errors were found, change the fitted flag to true
     self.__fitted = True
@@ -585,14 +635,16 @@ class NCA:
     """
     Returns the bottleneck table for a specific ceiling technique and 
     type of bottleneck. You first need to fit() the model before using 
-    this method.
+    this method. The selected ceiling for the bottleneck table must have
+    been specified previously as a ceiling in the NCA() instance creation,
+    otherwise the bottleneck table won't be displayed. 
 
     Parameters
     ----------
     ceiling : str
-      The type of ceiling line to use for the bottleneck table
+      The type of ceiling line to use for the bottleneck table.
     bottleneck_type : str, optional
-      The type of bottleneck table to return
+      The type of bottleneck table to return (percentage or actual values).
 
     Returns
     -------
@@ -605,6 +657,13 @@ class NCA:
                                              self.__y,
                                              bottleneck_type = bottleneck_type,
                                              OLS_ceiling_line_dict=self.__CR_FDH_OLS_params_dict,
+                                             scope_lims_dict = self.__scope_limits,
+                                             n_dec = self.__n_dec)
+    elif self.__fitted and ceiling=="cols" and "cols" in self.ceilings:
+      return NCA.__bottleneck_table_abline_ceiling(self.__X,
+                                             self.__y,
+                                             bottleneck_type = bottleneck_type,
+                                             OLS_ceiling_line_dict=self.__COLS_params_dict,
                                              scope_lims_dict = self.__scope_limits,
                                              n_dec = self.__n_dec)
     elif self.__fitted:

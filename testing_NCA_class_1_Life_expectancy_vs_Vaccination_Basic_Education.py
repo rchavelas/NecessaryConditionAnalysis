@@ -6,14 +6,14 @@ from src.NecessaryConditionAnalysis.main import NCA
 
 # Load dataset
 data = pd.read_csv('src/NecessaryConditionAnalysis/datasets/NCA_example_Vaccination_Basic_education_Life_expectancy_MOOC_2005.csv', index_col=0)
-X_columns = ["Vaccination","Basic education"]
+X_columns = ["Basic education","Vaccination"]
 y_column = "Life expectancy"
 print(data.head())
 print("")
 
 # Initialize NCA instance (instantiate NCA class an assign it to variable NCA_model)
 # By default, it uses the CE-FDH, CR-FDH ceilings, as well as OLS
-NCA_model = NCA(ceilings=["ce-fdh","cr-fdh","ols"])
+NCA_model = NCA(ceilings=["ce-fdh","cr-fdh","ols","cols"])
 print("Ceilings:")
 print(NCA_model.ceilings)
 print("")
@@ -30,10 +30,6 @@ print("")
 # Print NCA bottleneck table for the selected ceiling line technique(s)
 print("Bottleneck table:")
 print(NCA_model.bottleneck(ceiling='cr-fdh',bottleneck_type = "percentage"))
-print("")
-
-# Print NCA scatterplot for given ceilings and specified determinant (X)
-#NCA_model.plot(X_columns[1])
 print("")
 
 # Print NCA model accuracy for the selected ceiling line technique(s)
@@ -53,7 +49,13 @@ print(NCA_model.outcome_inefficiency_)
 #print(NCA_model.outcome_inefficiency_point_)
 print("")
 
+# Print NCA scatterplot for given ceilings and specified determinant (X)
+NCA_model.plot(X_columns[0])
+print("")
+
+'''
 print(pd.__version__)
 print(np.__version__)
 print(matplotlib.__version__)
 print(help(NCA))
+'''
